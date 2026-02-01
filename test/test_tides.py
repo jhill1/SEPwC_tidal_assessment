@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.insert(0,os.pardir)
 sys.path.insert(0,".")
+import io
 import pytest
 from pylint.lint import Run
 from pylint.reporters import CollectingReporter
@@ -10,12 +11,19 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import pytz
+from contextlib import redirect_stdout
 from tidal_analysis import *
 
 @pytest.fixture
 def data_dir():
     # Anchors to the folder where this test file sits
     return Path(__file__).parent / "data"
+
+@pytest.fixture
+def main_dir():
+    # Anchors to the folder where this test file sits
+    return Path(__file__).parent / os.pardir / "data"
+
 
 class TestTidalAnalysis():
 
@@ -183,23 +191,31 @@ class TestTidalAnalysis():
 
 class TestRegression():
 
-    def test_whitby_regression(self):
+    def test_whitby_regression(self, main_dir):
+        args = ["-v",
+                os.path.join(main_dir,"whitby")]
+        f = io.StringIO() 
+        with redirect_stdout(f):
+            main(args_list = args)
+        output = f.getvalue()
+        assert len(output) > 25
 
-        from subprocess import run
-        result = run(["python3","tidal_analysis.py","-v","data/whitby"],
-                     capture_output=True, check=True)
-        assert len(result.stdout) > 25
+    def test_aberdeen_regression(self, main_dir):
 
-    def test_aberdeen_regression(self):
+        args = ["-v",
+                os.path.join(main_dir,"aberdeen")]
+        f = io.StringIO() 
+        with redirect_stdout(f):
+            main(args_list = args)
+        output = f.getvalue()
+        assert len(output) > 25
 
-        from subprocess import run
-        result = run(["python3","tidal_analysis.py","--verbose","data/aberdeen"],
-                     capture_output=True, check=True)
-        assert len(result.stdout) > 25
+    def test_dover_regression(self, main_dir):
+        # no verbose output, so nothing should be output to screen
+        args = [os.path.join(main_dir,"dover")]
+        f = io.StringIO() 
+        with redirect_stdout(f):
+            main(args_list = args)
+        output = f.getvalue()
+        assert len(output) < 5
 
-    def test_dover_regression(self):
-
-        from subprocess import run
-        result = run(["python3","tidal_analysis.py","data/dover"],
-                     capture_output=True, check=True)
-        assert len(result.stdout) > 25

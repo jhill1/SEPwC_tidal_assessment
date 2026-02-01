@@ -38,10 +38,9 @@ def tidal_analysis(data, constituents, start_datetime):
 def get_longest_contiguous_data(data):
 
 
-    return 
+    return
 
-if __name__ == '__main__':
-
+def main(args_list=None):
     parser = argparse.ArgumentParser(
                      prog="UK Tidal analysis",
                      description="Calculate tidal constiuents and RSL from tide gauge data",
@@ -58,6 +57,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirname = args.directory
     verbose = args.verbose
-    
 
-
+if __name__ == '__main__':
+    main()
