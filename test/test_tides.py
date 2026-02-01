@@ -1,18 +1,26 @@
 import pytest
 import sys
-sys.path.insert(0,"../")
-sys.path.insert(0,"./")
+import os
+sys.path.insert(0,os.pardir)
+sys.path.insert(0,".")
 from tidal_analysis import *
 from pylint.lint import Run
 from pylint.reporters import CollectingReporter
 from dataclasses import asdict
 import pandas as pd
 import numpy as np
+from pathlib import Path
+import pytz
+
+@pytest.fixture
+def data_dir():
+    # Anchors to the folder where this test file sits
+    return Path(__file__).parent / "data"
 
 class TestTidalAnalysis():
     
-    def test_reading_data(self):
-        tidal_file = "data/1947ABE.txt"
+    def test_reading_data(self, data_dir):
+        tidal_file = os.path.join(data_dir, "1947ABE.txt")
         
         data = read_tidal_data(tidal_file)
         assert "Sea Level" in data.columns
@@ -30,9 +38,11 @@ class TestTidalAnalysis():
             read_tidal_data("missing_file.dat")
 
     
-    def test_join_data(self):
+    def test_join_data(self, data_dir):
+        
 
-        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
+        gauge_files = [os.path.join(data_dir, '1946ABE.txt'),
+                       os.path.join(data_dir, '1947ABE.txt')]
 
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
@@ -51,9 +61,10 @@ class TestTidalAnalysis():
         data = join_data(data1, data2)
         
 
-    def test_extract_year(self):
+    def test_extract_year(self, data_dir):
         
-        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
+        gauge_files = [os.path.join(data_dir, '1946ABE.txt'),
+                       os.path.join(data_dir, '1947ABE.txt')]
 
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
@@ -70,9 +81,10 @@ class TestTidalAnalysis():
 
         # check something sensible when a year is given that doesn't exist
 
-    def test_extract_section(self):
+    def test_extract_section(self, data_dir):
 
-        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
+        gauge_files = [os.path.join(data_dir, '1946ABE.txt'),
+                       os.path.join(data_dir, '1947ABE.txt')]
 
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
@@ -98,9 +110,11 @@ class TestTidalAnalysis():
 
         # check something sensible is done when dates are formatted correctly.
 
-    def test_correct_tides(self):
+    def test_correct_tides(self, data_dir):
 
-        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
+        gauge_files = [os.path.join(data_dir, '1946ABE.txt'),
+                       os.path.join(data_dir, '1947ABE.txt')]
+
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
         data = join_data(data1, data2)
@@ -117,9 +131,11 @@ class TestTidalAnalysis():
         assert amp[1] == pytest.approx(0.441,abs=0.1)
 
 
-    def test_linear_regression(self):
+    def test_linear_regression(self, data_dir):
 
-        gauge_files = ['data/1946ABE.txt', 'data/1947ABE.txt']
+        gauge_files = [os.path.join(data_dir, '1946ABE.txt'),
+                       os.path.join(data_dir, '1947ABE.txt')]
+
         data1 = read_tidal_data(gauge_files[1])
         data2 = read_tidal_data(gauge_files[0])
         data = join_data(data1, data2)
@@ -149,17 +165,29 @@ class TestTidalAnalysis():
         for error in report.messages:
             print(line_format.format(**asdict(error)))   
 
-        assert nErrors < 500
-        assert nErrors < 400
-        assert nErrors < 250
-        assert nErrors < 100
-        assert nErrors < 50
-        assert nErrors < 10
-        assert nErrors == 0
-        assert score > 3
-        assert score > 5
-        assert score > 7
-        assert score > 9
+        score_thresholds = [3, 5, 7, 9]
+        error_thresholds = [500, 250, 100, 50, 10, 0]
+        
+        results = {"pass": 0, "fail": 0}
+
+        for t in score_thresholds:
+            if score > t:
+                results["pass"] += 1
+            else:
+                results["fail"] += 1
+
+        for t in error_thresholds:
+            if nErrors <= t: 
+                results["pass"] += 1
+            else:
+                results["fail"] += 1
+
+        print(f"You passed {results['pass']} out of {len(score_thresholds) + \
+                len(error_thresholds)} lint checks.")
+        
+        # Finally, trigger a failure if they didn't get a perfect score
+        # or just assert results["fail"] == 0
+        assert results["fail"] == 0, f"You failed {results['fail']} lint tests."
 
 class TestRegression():
 
