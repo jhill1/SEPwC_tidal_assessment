@@ -4,7 +4,15 @@
 
 Your task is to write code to read in multiple tidal data files (each a different year) 
 for a single tidal station. You should then calculate the M2 and S2 tidal components
-and also the rate of sea-level rise per year, for that station.
+and also the rate of sea-level rise per year, for that station. You shoudl either
+output these to the screen is the user specifies the `-v` flag in the command line or
+to a file if they don't. The user will run the code like this:
+
+```
+python3 tidal_analysis.py -v data/whitby/
+```
+
+The `data/whitby` is a a directory continaing all the tidal files to be included in the analysis.
 
 ## The tests
 
@@ -110,6 +118,8 @@ but using the [`date2num`](https://matplotlib.org/stable/api/dates_api.html#matp
 function in `matplotlib.dates`, which converts a datetime
 to the number of days since 01-01-1970. 
 
+Your programme should **not** produce any output to screen without the `-v` flag. In that case you 
+will have to put the required output into a file.
 
 ## The rules
 
